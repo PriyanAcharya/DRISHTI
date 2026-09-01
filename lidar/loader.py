@@ -11,6 +11,7 @@ def load_point_cloud(file_path: str) -> o3d.geometry.PointCloud:
     file_path : str
         Path to the point cloud file.
 
+        
     Returns
     -------
     o3d.geometry.PointCloud
