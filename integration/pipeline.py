@@ -3,6 +3,7 @@ from typing import Any, Dict, List
 import pandas as pd
 
 from person2_detection.detection.postprocess import postprocess_predictions
+from person2_detection.tracking.object_tracker import ObjectTracker
 from tracking.pipeline import TrackingRiskPipeline
 from adaptive.policy import apply_adaptive_resolution
 
@@ -19,6 +20,7 @@ class DRISHTIIntegrationPipeline:
 
         self.grid_size = grid_size
         self.tracking_pipeline = TrackingRiskPipeline()
+        self.object_tracker = ObjectTracker()
 
     def process_detections(
         self,
@@ -31,6 +33,10 @@ class DRISHTIIntegrationPipeline:
             predictions,
             frame_id=frame_id,
         )
+
+        # Assign stable track IDs before passing detections to
+        # the tracking/risk pipeline.
+        detections = self.object_tracker.update(detections)
 
         results = []
 
