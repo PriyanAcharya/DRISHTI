@@ -1,120 +1,110 @@
-from tracker import ObjectTracker
-from motion import MotionAnalyzer
-from risk import RiskAnalyzer
+from tracking.tracker import ObjectTracker
+from tracking.motion import MotionAnalyzer
 
 
-def test_tracking_pipeline():
-
+def test_tracker_assigns_id():
     tracker = ObjectTracker()
+
+    detections = [
+        {
+            "label": "Car",
+            "position": (10.0, 5.0)
+        }
+    ]
+
+    result = tracker.update(detections)
+
+    assert len(result) == 1
+    assert result[0]["id"] == 1
+    assert result[0]["label"] == "Car"
+    assert result[0]["position"] == (10.0, 5.0)
+
+
+def test_tracker_preserves_id_for_same_label():
+    tracker = ObjectTracker()
+
+    first_frame = [
+        {
+            "label": "Car",
+            "position": (10.0, 5.0)
+        }
+    ]
+
+    second_frame = [
+        {
+            "label": "Car",
+            "position": (11.0, 5.0)
+        }
+    ]
+
+    first_result = tracker.update(first_frame)
+    second_result = tracker.update(second_frame)
+
+    assert first_result[0]["id"] == second_result[0]["id"]
+
+
+def test_tracker_stores_position_history():
+    tracker = ObjectTracker(history_size=3)
+
+    tracker.update([
+        {
+            "label": "Car",
+            "position": (10.0, 5.0)
+        }
+    ])
+
+    result = tracker.update([
+        {
+            "label": "Car",
+            "position": (11.0, 5.0)
+        }
+    ])
+
+    assert result[0]["position_history"] == [
+        (10.0, 5.0),
+        (11.0, 5.0)
+    ]
+
+
+def test_motion_velocity():
     motion = MotionAnalyzer()
-    risk = RiskAnalyzer()
-
-    # -------------------------
-    # Frame 1
-    # -------------------------
-    frame1 = [
-        {
-            "label": "person",
-            "position": (10, 5)
-        }
-    ]
-
-    tracked_frame1 = tracker.update(frame1)
-
-    # -------------------------
-    # Frame 2
-    # -------------------------
-    frame2 = [
-        {
-            "label": "person",
-            "position": (13, 7)
-        }
-    ]
-
-    tracked_frame2 = tracker.update(frame2)
-
-    # -------------------------
-    # Frame 3
-    # -------------------------
-    frame3 = [
-        {
-            "label": "person",
-            "position": (16, 9)
-        }
-    ]
-
-    tracked_frame3 = tracker.update(frame3)
-
-    # -------------------------
-    # Motion Analysis
-    # -------------------------
-
-    previous_position = tracked_frame2[0]["position"]
-    current_position = tracked_frame3[0]["position"]
 
     velocity = motion.calculate_velocity(
-        previous_position,
-        current_position
+        (10.0, 5.0),
+        (10.5, 5.0),
+        dt=0.1
     )
+
+    assert velocity == (5.0, 0.0)
+
+
+def test_motion_speed():
+    motion = MotionAnalyzer()
 
     speed = motion.calculate_speed(
-        velocity
+        (3.0, 4.0)
     )
 
-    direction = motion.calculate_direction(
-        velocity
+    assert speed == 5.0
+
+
+def test_motion_direction():
+    motion = MotionAnalyzer()
+
+    assert motion.calculate_direction((1.0, 1.0)) == "UP_RIGHT"
+    assert motion.calculate_direction((-1.0, 1.0)) == "UP_LEFT"
+    assert motion.calculate_direction((1.0, -1.0)) == "DOWN_RIGHT"
+    assert motion.calculate_direction((-1.0, -1.0)) == "DOWN_LEFT"
+    assert motion.calculate_direction((0.0, 0.0)) == "STATIONARY"
+
+
+def test_motion_prediction():
+    motion = MotionAnalyzer()
+
+    predicted = motion.predict_position(
+        (10.0, 5.0),
+        (5.0, 0.0),
+        prediction_time=1.0
     )
 
-    predicted_position = motion.predict_position(
-        current_position,
-        velocity
-    )
-
-    # -------------------------
-    # Risk Analysis
-    # -------------------------
-
-    distance = 4
-
-    time_to_collision = risk.calculate_time_to_collision(
-        distance,
-        velocity
-    )
-
-    risk_level = risk.calculate_risk(
-        distance,
-        velocity
-    )
-
-    # -------------------------
-    # Display Results
-    # -------------------------
-
-    print("=== Tracking Pipeline Test ===")
-
-    print("\nFrame 1:")
-    print(tracked_frame1)
-
-    print("\nFrame 2:")
-    print(tracked_frame2)
-
-    print("\nFrame 3:")
-    print(tracked_frame3)
-
-    print("\n--- Motion Analysis ---")
-    print("Velocity:", velocity)
-    print("Speed:", round(speed, 2))
-    print("Direction:", direction)
-    print("Predicted Position:", predicted_position)
-
-    print("\n--- Risk Analysis ---")
-    print("Distance:", distance)
-    print(
-        "Time to Collision:",
-        round(time_to_collision, 2)
-    )
-    print("Risk Level:", risk_level)
-
-
-if __name__ == "__main__":
-    test_tracking_pipeline()
+    assert predicted == (15.0, 5.0)

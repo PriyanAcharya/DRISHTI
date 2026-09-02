@@ -3,38 +3,60 @@ class MotionAnalyzer:
     Analyzes object movement using position history.
 
     Calculates:
-    - Velocity
+    - Velocity in meters/second
+    - Speed
     - Direction
     - Predicted future position
     """
 
-    def calculate_velocity(self, previous_position, current_position):
+    def calculate_velocity(
+        self,
+        previous_position,
+        current_position,
+        dt=0.1
+    ):
         """
-        Calculate movement between two positions.
+        Calculate velocity in meters/second.
+
+        Parameters:
+            previous_position: (x, y)
+            current_position: (x, y)
+            dt: time between frames in seconds
         """
+
+        if dt <= 0:
+            raise ValueError("dt must be greater than 0")
 
         previous_x, previous_y = previous_position
         current_x, current_y = current_position
 
-        velocity_x = current_x - previous_x
-        velocity_y = current_y - previous_y
+        velocity_x = (
+            current_x - previous_x
+        ) / dt
+
+        velocity_y = (
+            current_y - previous_y
+        ) / dt
 
         return velocity_x, velocity_y
 
     def calculate_speed(self, velocity):
         """
-        Calculate the speed from velocity.
+        Calculate speed from velocity.
         """
 
         velocity_x, velocity_y = velocity
 
-        speed = (velocity_x ** 2 + velocity_y ** 2) ** 0.5
+        speed = (
+            velocity_x ** 2 +
+            velocity_y ** 2
+        ) ** 0.5
 
         return round(speed, 2)
 
     def calculate_direction(self, velocity):
         """
-        Determine the basic movement direction.
+        Determine basic movement direction.
         """
 
         velocity_x, velocity_y = velocity
@@ -65,45 +87,31 @@ class MotionAnalyzer:
 
         return "DOWN"
 
-    def predict_position(self, current_position, velocity, steps=1):
+    def predict_position(
+        self,
+        current_position,
+        velocity,
+        prediction_time=1.0
+    ):
         """
-        Predict the future position using current velocity.
+        Predict future XY position using
+        constant-velocity motion.
+
+        prediction_time:
+            Future time in seconds.
         """
 
         current_x, current_y = current_position
         velocity_x, velocity_y = velocity
 
-        predicted_x = current_x + (velocity_x * steps)
-        predicted_y = current_y + (velocity_y * steps)
+        predicted_x = (
+            current_x +
+            velocity_x * prediction_time
+        )
+
+        predicted_y = (
+            current_y +
+            velocity_y * prediction_time
+        )
 
         return predicted_x, predicted_y
-
-
-# Simple test
-if __name__ == "__main__":
-
-    motion = MotionAnalyzer()
-
-    previous_position = (13, 7)
-    current_position = (16, 9)
-
-    velocity = motion.calculate_velocity(
-        previous_position,
-        current_position
-    )
-
-    speed = motion.calculate_speed(velocity)
-
-    direction = motion.calculate_direction(velocity)
-
-    predicted_position = motion.predict_position(
-        current_position,
-        velocity
-    )
-
-    print("Previous Position:", previous_position)
-    print("Current Position:", current_position)
-    print("Velocity:", velocity)
-    print("Speed:", speed)
-    print("Direction:", direction)
-    print("Predicted Position:", predicted_position)
