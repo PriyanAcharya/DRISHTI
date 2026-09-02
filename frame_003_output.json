@@ -1,0 +1,53 @@
+{
+    "frame_id": "frame_003",
+    "detections": [
+        {
+            "object_id": "track_4",
+            "class_name": "Pedestrian",
+            "confidence": 0.97,
+            "position": {
+                "x": 7.0,
+                "y": 2.0,
+                "z": 0.0
+            },
+            "dimensions": {
+                "length": 0.8,
+                "width": 0.6,
+                "height": 1.7
+            },
+            "heading": 0.0,
+            "distance": {
+                "xy": 7.280109889280518,
+                "3d": 7.280109889280518
+            },
+            "importance_score": 0.827,
+            "motion_score": 0.0,
+            "risk_level": "HIGH",
+            "recommended_resolution": "HIGH"
+        },
+        {
+            "object_id": "track_2",
+            "class_name": "Car",
+            "confidence": 0.92,
+            "position": {
+                "x": 12.0,
+                "y": 5.0,
+                "z": 0.0
+            },
+            "dimensions": {
+                "length": 4.0,
+                "width": 1.8,
+                "height": 1.6
+            },
+            "heading": 0.0,
+            "distance": {
+                "xy": 13.0,
+                "3d": 13.0
+            },
+            "importance_score": 0.831,
+            "motion_score": 0.7,
+            "risk_level": "MEDIUM",
+            "recommended_resolution": "HIGH"
+        }
+    ]
+}
