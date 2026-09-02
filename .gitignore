@@ -1,0 +1,23 @@
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Large model/checkpoint files
+*.pth
+*.pt
+*.ckpt
+
+# IDE settings
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
