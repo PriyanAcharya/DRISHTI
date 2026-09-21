@@ -12,10 +12,12 @@ class TrackingRiskPipeline:
     - speed
     - direction
     - predicted trajectory
+    - predicted position
     - closing speed
     - time-to-collision (TTC)
     - risk score
     - risk level
+    - cell_id
     """
 
     def __init__(
@@ -42,6 +44,7 @@ class TrackingRiskPipeline:
         Expected obj:
             {
                 "id": ...,
+                "cell_id": ...,
                 "x": ...,
                 "y": ...,
                 "z": ...
@@ -85,6 +88,22 @@ class TrackingRiskPipeline:
             step=self.prediction_step
         )
 
+        # The trajectory starts with the current position at t=0.
+        # Find the first actual future prediction.
+        predicted_point = None
+
+        for point in trajectory:
+            if point["time"] > 0:
+                predicted_point = point
+                break
+
+        # Safety fallback in case no future point exists.
+        if predicted_point is None:
+            predicted_point = trajectory[0]
+
+        predicted_x = predicted_point["x"]
+        predicted_y = predicted_point["y"]
+
         distance = (
             obj["x"] ** 2 +
             obj["y"] ** 2
@@ -98,14 +117,29 @@ class TrackingRiskPipeline:
 
         return {
             "id": obj.get("id"),
+
+            # Spatial cell information.
+            "cell_id": obj.get("cell_id"),
+
             "x": obj["x"],
             "y": obj["y"],
             "z": obj.get("z", 0.0),
+
+            # Motion information.
             "vx": velocity[0],
             "vy": velocity[1],
             "speed": speed,
             "direction": direction,
+
+            # Existing full trajectory.
             "trajectory": trajectory,
+
+            # NEW:
+            # First predicted future position.
+            "predicted_x": predicted_x,
+            "predicted_y": predicted_y,
+
+            # Risk information.
             "distance": risk["distance"],
             "closing_speed": risk["closing_speed"],
             "ttc": risk["ttc"],
@@ -120,6 +154,9 @@ class TrackingRiskPipeline:
         Uses timestamp differences when available.
         Falls back to self.dt when timestamps are missing
         or invalid.
+
+        cell_id is optional so the existing pipeline continues
+        to work even before Person 1/Person 2 provides it.
         """
 
         object_id = detection.object_id
@@ -160,6 +197,14 @@ class TrackingRiskPipeline:
         if previous_position is None:
             return {
                 "id": object_id,
+
+                # Spatial cell information.
+                "cell_id": getattr(
+                    detection,
+                    "cell_id",
+                    None
+                ),
+
                 "x": detection.x,
                 "y": detection.y,
                 "z": detection.z,
@@ -167,6 +212,7 @@ class TrackingRiskPipeline:
                 "vy": 0.0,
                 "speed": 0.0,
                 "direction": "STATIONARY",
+
                 "trajectory": [
                     {
                         "x": detection.x,
@@ -175,6 +221,12 @@ class TrackingRiskPipeline:
                         "time": 0.0
                     }
                 ],
+
+                # No future movement can be predicted from
+                # a single observation.
+                "predicted_x": detection.x,
+                "predicted_y": detection.y,
+
                 "distance": detection.distance_xy,
                 "closing_speed": 0.0,
                 "ttc": float("inf"),
@@ -189,6 +241,14 @@ class TrackingRiskPipeline:
 
         obj = {
             "id": object_id,
+
+            # Carry cell_id into process_object().
+            "cell_id": getattr(
+                detection,
+                "cell_id",
+                None
+            ),
+
             "x": detection.x,
             "y": detection.y,
             "z": detection.z

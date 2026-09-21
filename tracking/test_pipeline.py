@@ -136,3 +136,28 @@ def test_prediction_trajectory_is_generated():
     assert trajectory[0]["x"] == 9.0
     assert trajectory[1]["x"] == 8.0
     assert trajectory[2]["x"] == 7.0
+
+
+def test_predicted_position_is_generated():
+    pipeline = TrackingRiskPipeline(
+        prediction_horizon=1.0,
+        prediction_step=0.5
+    )
+
+    detection1 = make_detection(
+        "track_1",
+        10.0,
+        100.0
+    )
+
+    detection2 = make_detection(
+        "track_1",
+        9.0,
+        100.5
+    )
+
+    pipeline.process_detection(detection1)
+    result = pipeline.process_detection(detection2)
+
+    assert result["predicted_x"] == 8.0
+    assert result["predicted_y"] == 0.0

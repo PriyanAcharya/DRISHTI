@@ -66,6 +66,87 @@ def test_tracker_stores_position_history():
     ]
 
 
+def test_tracker_matches_nearest_same_label():
+    tracker = ObjectTracker(
+        max_match_distance=5.0
+    )
+
+    first_frame = [
+        {
+            "label": "Person",
+            "position": (10.0, 5.0)
+        },
+        {
+            "label": "Person",
+            "position": (30.0, 5.0)
+        }
+    ]
+
+    first_result = tracker.update(first_frame)
+
+    first_id = first_result[0]["id"]
+    second_id = first_result[1]["id"]
+
+    second_frame = [
+        {
+            "label": "Person",
+            "position": (31.0, 5.0)
+        },
+        {
+            "label": "Person",
+            "position": (11.0, 5.0)
+        }
+    ]
+
+    second_result = tracker.update(second_frame)
+
+    ids_by_position = {
+        item["position"]: item["id"]
+        for item in second_result
+    }
+
+    assert ids_by_position[(31.0, 5.0)] == second_id
+    assert ids_by_position[(11.0, 5.0)] == first_id
+
+
+def test_tracker_creates_new_id_when_object_is_too_far():
+    tracker = ObjectTracker(
+        max_match_distance=5.0
+    )
+
+    first_result = tracker.update([
+        {
+            "label": "Car",
+            "position": (10.0, 5.0)
+        }
+    ])
+
+    old_id = first_result[0]["id"]
+
+    second_result = tracker.update([
+        {
+            "label": "Car",
+            "position": (30.0, 5.0)
+        }
+    ])
+
+    assert second_result[0]["id"] != old_id
+
+
+def test_tracker_preserves_cell_id():
+    tracker = ObjectTracker()
+
+    result = tracker.update([
+        {
+            "label": "Person",
+            "position": (10.0, 5.0),
+            "cell_id": 142
+        }
+    ])
+
+    assert result[0]["cell_id"] == 142
+
+
 def test_motion_velocity():
     motion = MotionAnalyzer()
 
@@ -91,11 +172,25 @@ def test_motion_speed():
 def test_motion_direction():
     motion = MotionAnalyzer()
 
-    assert motion.calculate_direction((1.0, 1.0)) == "UP_RIGHT"
-    assert motion.calculate_direction((-1.0, 1.0)) == "UP_LEFT"
-    assert motion.calculate_direction((1.0, -1.0)) == "DOWN_RIGHT"
-    assert motion.calculate_direction((-1.0, -1.0)) == "DOWN_LEFT"
-    assert motion.calculate_direction((0.0, 0.0)) == "STATIONARY"
+    assert motion.calculate_direction(
+        (1.0, 1.0)
+    ) == "UP_RIGHT"
+
+    assert motion.calculate_direction(
+        (-1.0, 1.0)
+    ) == "UP_LEFT"
+
+    assert motion.calculate_direction(
+        (1.0, -1.0)
+    ) == "DOWN_RIGHT"
+
+    assert motion.calculate_direction(
+        (-1.0, -1.0)
+    ) == "DOWN_LEFT"
+
+    assert motion.calculate_direction(
+        (0.0, 0.0)
+    ) == "STATIONARY"
 
 
 def test_motion_prediction():
